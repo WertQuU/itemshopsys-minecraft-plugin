@@ -3,6 +3,7 @@ package dev.shiza.itemshopsys.command;
 import dev.shiza.itemshopsys.ItemShopLogger;
 import dev.shiza.itemshopsys.client.ItemShopClient;
 import dev.shiza.itemshopsys.client.ItemShopClientConfig;
+import dev.shiza.itemshopsys.client.ItemShopServer;
 import dev.shiza.itemshopsys.client.command.ExecutableCommand;
 import dev.shiza.itemshopsys.player.PlayerAccessor;
 import java.util.List;
@@ -30,17 +31,34 @@ public final class CommandPoolTask implements Runnable {
 
   @Override
   public void run() {
+    // resolved on every run, so "/itemshopsys reload" applies changes to the servers list
+    for (final ItemShopServer server : config.resolveServers()) {
+      try {
+        processServer(server);
+      } catch (final Exception exception) {
+        logger.error(
+            String.format(
+                "Could not process server %s: %s", server.getServerId(), exception));
+      }
+    }
+  }
+
+  private void processServer(final ItemShopServer server) {
     final List<ExecutableCommand> executableCommands =
-        client.retrieveCommands(config.shopId, config.serverId).getCommands();
+        client
+            .retrieveCommands(config.shopId, server.getServerId(), server.getServerToken())
+            .getCommands();
     if (executableCommands.isEmpty()) {
-      logger.debug("No commands to execute were retrieved.");
+      logger.debug(
+          String.format("No commands to execute were retrieved for %s.", server.getServerId()));
       return;
     }
 
-    executableCommands.forEach(this::processCommand);
+    executableCommands.forEach(command -> processCommand(server, command));
   }
 
-  private void processCommand(final ExecutableCommand executableCommand) {
+  private void processCommand(
+      final ItemShopServer server, final ExecutableCommand executableCommand) {
     if (isCommandUnavailable(executableCommand)) {
       logger.debug(
           String.format(
@@ -49,7 +67,11 @@ public final class CommandPoolTask implements Runnable {
               executableCommand.getCommand(),
               executableCommand.getPlayerName()));
 
-      client.restoreCommand(config.shopId, config.serverId, executableCommand.getUniqueId());
+      client.restoreCommand(
+          config.shopId,
+          server.getServerId(),
+          server.getServerToken(),
+          executableCommand.getUniqueId());
       return;
     }
 
@@ -60,7 +82,8 @@ public final class CommandPoolTask implements Runnable {
             executableCommand.getCommand(),
             executableCommand.getPlayerName()));
 
-    commandDispatcher.dispatchCommand(executableCommand.getCommand());
+    commandDispatcher.dispatchCommand(
+        executableCommand.getCommand(), executableCommand.getPlayerName());
   }
 
   private boolean isCommandUnavailable(final ExecutableCommand command) {

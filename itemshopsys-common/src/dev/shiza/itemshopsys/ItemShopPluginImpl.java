@@ -62,8 +62,6 @@ final class ItemShopPluginImpl implements ItemShopPlugin {
   }
 
   public boolean requiresConfiguration() {
-    return config.shopId.equals(NOT_CONFIGURED_VALUE)
-        || config.serverId.equals(NOT_CONFIGURED_VALUE)
-        || config.serverToken.equals(NOT_CONFIGURED_VALUE);
+    return config.shopId.equals(NOT_CONFIGURED_VALUE) || config.resolveServers().isEmpty();
   }
 }

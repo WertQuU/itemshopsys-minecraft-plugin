@@ -28,7 +28,6 @@ final class HttpItemShopClient implements ItemShopClient {
         .defaultBaseUrl(config.apiUrl)
         .addDefaultHeader("Accept", "application/json")
         .addDefaultHeader("User-Agent", "ItemShopSysPlugin/Minecraft")
-        .addDefaultHeader("X-SERVER-TOKEN", config.serverToken)
         .addDefaultHeader("X-PLATFORM", "MinecraftJava")
         .addDefaultHeader("X-VERSION", platformDataProvider.getPluginVersion())
         .addDefaultHeader("X-ENGINE", platformDataProvider.getEngineName())
@@ -39,11 +38,13 @@ final class HttpItemShopClient implements ItemShopClient {
   }
 
   @Override
-  public ExecutableCommands retrieveCommands(final String shopId, final String serverId) {
+  public ExecutableCommands retrieveCommands(
+      final String shopId, final String serverId, final String serverToken) {
     final HttpResponse<ExecutableCommands> response =
         Unirest.get("/plugin/{shopId}/{serverId}/minecraft/commands")
             .routeParam("shopId", shopId)
             .routeParam("serverId", serverId)
+            .header("X-SERVER-TOKEN", serverToken)
             .asObject(ExecutableCommands.class);
 
     if (response.getStatus() == 200) {
@@ -71,12 +72,16 @@ final class HttpItemShopClient implements ItemShopClient {
 
   @Override
   public void restoreCommand(
-      final String shopId, final String serverId, final UUID commandUniqueId) {
+      final String shopId,
+      final String serverId,
+      final String serverToken,
+      final UUID commandUniqueId) {
     final HttpResponse<Empty> response =
         Unirest.post("/plugin/{shopId}/{serverId}/minecraft/commands/{commandUuid}/restore")
             .routeParam("shopId", shopId)
             .routeParam("serverId", serverId)
             .routeParam("commandUuid", commandUniqueId.toString())
+            .header("X-SERVER-TOKEN", serverToken)
             .asEmpty();
     switch (response.getStatus()) {
       case 429:

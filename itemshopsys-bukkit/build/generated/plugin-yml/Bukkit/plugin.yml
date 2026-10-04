@@ -1,0 +1,9 @@
+name: itemshopsys
+version: 1.0.3
+main: dev.shiza.itemshopsys.bukkit.ItemShopBukkitPlugin
+author: shiza
+commands:
+  itemshopsys:
+    permission: itemshopsys.reload
+api-version: "1.13"
+folia-supported: true

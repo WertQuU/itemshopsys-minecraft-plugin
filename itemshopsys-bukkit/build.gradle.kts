@@ -15,6 +15,7 @@ bukkit {
     author = "shiza"
     version = project.version.toString()
     apiVersion = "1.13"
+    foliaSupported = true
     commands {
         register("itemshopsys") {
             permission = "itemshopsys.reload"
